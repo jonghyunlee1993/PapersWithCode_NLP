@@ -1,7 +1,7 @@
 # 1. CNN classification data
-CNN_classification/data
-CNN_classification/weights
-CNN_classification/.ipynb_checkpoints
+01.CNN_classification/data
+01.CNN_classification/weights
+01.CNN_classification/.ipynb_checkpoints
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,pycharm,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,pycharm,jupyternotebooks
