@@ -1,5 +1,6 @@
 # 1. CNN classification data
 CNN_classification/data
+CNN_classification/weights
 CNN_classification/.ipynb_checkpoints
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,pycharm,jupyternotebooks
