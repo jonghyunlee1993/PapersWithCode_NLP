@@ -35,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_path', type=str, default='data', help='data folder')
     parser.add_argument('--pos_data', type=str, default='rt-polarity.pos', help='file name of positive raw data')
     parser.add_argument('--neg_data', type=str, default='rt-polarity.neg', help='file name of negative raw data')
-    parser.add_argument('--preprocessed_data', type=str, default='polarity_df.csv', help='file name of processed data')
+    parser.add_argument('--preprocessed_data', type=str, default='polarity_data.pickle', help='file name of processed data')
 
     # model
     parser.add_argument('--mode', type=str, default='static', help="[static] / nonstatic / multi")

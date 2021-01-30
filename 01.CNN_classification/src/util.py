@@ -1,10 +1,26 @@
 import gensim
-
+import pickle
 
 
 def open_file(fname):
     with open(fname, "r") as f:
         data = f.read()
+
+    return data
+
+
+def save_pickle(fname, data):
+    with open(fname, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+    print(f"pickle file was successfully saved: {fname}")
+
+
+def load_pickle(fname):
+    with open(fname, 'rb') as f:
+        data = pickle.load(f)
+
+    print(f"pickle file was successfully loaded: {fname}")
 
     return data
 
