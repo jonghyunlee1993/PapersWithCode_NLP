@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-def train(model, iterator, optimizer, criterion):
+def train(model, iterator, optimizer, criterion, max_norm_sacling=False):
     epoch_loss = 0
     epoch_acc = 0
 
@@ -17,16 +17,21 @@ def train(model, iterator, optimizer, criterion):
         loss.backward()
         optimizer.step()
 
-        #  l2 norm (weight contraints): 3
-        with torch.no_grad():
-            for param in model.parameters():
-                param.clamp_(min=-3, max=3)
+        if max_norm_sacling:
+            model.param.data = max_norm_sacling(model)
 
         epoch_loss += loss.item()
         epoch_acc += acc.item()
 
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
+def max_norm_scailing(model, max_val=3, eps=1e-8):
+    param = model.fc.weight.norm()
+    norm = param.norm(2, dim=0, keepdim=True)
+    desired = torch.clamp(norm, 0, max_val)
+    param = param * (desired / (eps + norm))
+
+    return param
 
 def evaluate(model, iterator, criterion):
     epoch_loss = 0
