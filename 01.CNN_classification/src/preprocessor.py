@@ -2,19 +2,19 @@ import re
 import os
 import argparse
 
-import util
+from src import util
 
 class Preprocessor:
     def __init__(self, args):
         self.args = args
         self.data_path = self.args.data_path
-        self.pos_data = os.path.join(self.data_path, self.args.pos_data)
-        self.neg_data = os.path.join(self.data_path, self.args.neg_data)
-        self.result_pickle = os.path.join(self.data_path, self.args.processed_pickle)
-        self.result_csv = os.path.join(self.data_path, self.args.processed_csv)
+        self.pos_data = util.os.path.join(self.data_path, self.args.pos_data)
+        self.neg_data = util.os.path.join(self.data_path, self.args.neg_data)
+        self.result_pickle = util.os.path.join(self.data_path, self.args.processed_pickle)
+        self.result_csv = util.os.path.join(self.data_path, self.args.processed_csv)
 
     def build_data(self):
-        if not os.path.isfile(self.result_pickle):
+        if not util.os.path.isfile(self.result_pickle):
             pos = util.open_file(self.pos_data)
             neg = util.open_file(self.neg_data)
 

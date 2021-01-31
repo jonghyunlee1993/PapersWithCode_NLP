@@ -1,6 +1,9 @@
 import os
 import gensim
 import pickle
+import random
+import torch
+import numpy as np
 import pandas as pd
 
 
@@ -42,21 +45,23 @@ def generate_review_data(start_index, label, sentences, reviews):
     return reviews
 
 
-def load_pretrained_word2vec(data_path):
+def load_pretrained_word2vec(data_path, TEXT):
     pretrained_model_fname = os.path.join(data_path, "GoogleNews-vectors-negative300.bin.gz")
-    word2vec_index_fname   = os.path.join(data_path, "word2vec_index.pickle")
+    word2vec_embedding     = os.path.join(data_path, "word2vec_embedding.pickle")
 
-    if os.path.isfile(word2vec_index_fname):
-        print("word2vec_index pickle was already exist")
-        word2vec_index = load_pickle(word2vec_index_fname)
+    if os.path.isfile(word2vec_embedding):
+        print("word2vec_embedding pickle was already exist")
+        word2vec_index, word2vec_vector = load_pickle(word2vec_embedding)
     else:
         print("\nload pretrained word2vec model ... ")
-        word2vec = gensim.models.keyedvectors.load_word2vec_format(pretrained_model_fname, binary=True)
+        word2vec = gensim.models.KeyedVectors.load_word2vec_format(pretrained_model_fname, binary=True)
         word2vec_index = get_word2vec_index(word2vec)
-        save_pickle(word2vec_index_fname, word2vec_index)
-        print("\nword2vec_index pickle was saved for future study")
+        word2vec_vector = word2vec.vectors
+        word2vec_to_pickle = [word2vec_index, word2vec_vector]
+        save_pickle(word2vec_embedding, word2vec_to_pickle)
+        print("\nword2vec_embedding pickle was saved for future study")
 
-    return word2vec_index
+    return word2vec_index, word2vec_vector
 
 
 def get_word2vec_index(word2vec):

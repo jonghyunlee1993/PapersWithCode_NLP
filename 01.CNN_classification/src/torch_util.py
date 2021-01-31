@@ -1,3 +1,4 @@
+import time
 import torch
 import numpy as np
 
@@ -35,6 +36,14 @@ def max_norm_scailing(model, max_val=3, eps=1e-8):
     return param
 
 
+def proc_special_token(embedding, TEXT, EMBEDDING_DIM):
+    UNK_INDEX = TEXT.vocab.stoi[TEXT.unk_token]
+    PAD_INDEX = TEXT.vocab.stoi[TEXT.pad_token]
+
+    embedding.weight.data[UNK_INDEX] = torch.nn.init.uniform_(torch.empty(EMBEDDING_DIM), -0.25, 0.25)
+    embedding.weight.data[PAD_INDEX] = torch.zeros(EMBEDDING_DIM)
+
+
 def evaluate(model, iterator, criterion):
     epoch_loss = 0
     epoch_acc = 0
@@ -52,12 +61,17 @@ def evaluate(model, iterator, criterion):
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
 
-def proc_special_token(model, UNK_IDX, PAD_IDX, EMBEDDING_DIM):
-    model.embedding.weight.data[UNK_IDX] = torch.nn.init.uniform_(torch.empty(EMBEDDING_DIM), -0.25, 0.25)
-    model.embedding.weight.data[PAD_IDX] = torch.zeros(EMBEDDING_DIM)
+def save_model_param(fname, model):
+    torch.save(model.state_dict(), fname)
+    print("best model parameter was saved!\n")
 
-    return model
 
+def print_training_log(epoch, start_time, end_time, train_loss, train_acc, valid_loss, valid_acc):
+    epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+
+    print(f'\tEpoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
+    print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
+    print(f'\tTest Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%')
 
 def predict(TEXT, sentence, model, device, fixed_length=56):
     word2index = []
@@ -71,6 +85,10 @@ def predict(TEXT, sentence, model, device, fixed_length=56):
     predicted_label = 'Positive' if probability >= 0.5 else 'Negative'
 
     return probability, predicted_label
+
+
+def get_time():
+    return time.time()
 
 
 def epoch_time(start_time, end_time):

@@ -11,14 +11,14 @@ from torch.utils.data import Subset, DataLoader
 from torchtext.data import Field, LabelField, TabularDataset, BucketIterator
 
 
-def load_tabular_dataset(fname, fix_length=56):
-    TEXT   = Field(sequential=True, tokenize=str.split, batch_first=True, fix_length=fix_length, lower=True)
-    LABEL  = LabelField(sequential=False, dtype=torch.float)
-    FIELDS = [('label', LABEL), ('text', TEXT)]
-
-    dataset = TabularDataset(fname, fields=FIELDS, format='csv', skip_header=True)
-
-    return dataset
+# def load_tabular_dataset(fname, fix_length=56):
+#     TEXT   = Field(sequential=True, tokenize=str.split, batch_first=True, fix_length=fix_length, lower=True)
+#     LABEL  = LabelField(sequential=False, dtype=torch.float)
+#     FIELDS = [('label', LABEL), ('text', TEXT)]
+#
+#     dataset = TabularDataset(fname, fields=FIELDS, format='csv', skip_header=True)
+#
+#     return dataset, TEXT
 
 def data_load_with_cv(dataset, args, cv_index=0, seed=1234, n_split=10):
     kf = KFold(n_splits=n_split, random_state=seed, shuffle=True)
@@ -41,12 +41,22 @@ def data_load_with_cv(dataset, args, cv_index=0, seed=1234, n_split=10):
     return train_iterator, valid_iterator
 
 
-def data_load_without_cv(dataset, args, seed=1234, split_ratio=0.9):
-    train_dataset, valid_dataset  = dataset.split(random_state=random.seed(seed), split_ratio=split_ratio)
-    train_iterator, valid_iterator = BucketIterator.splits((train_dataset, test_dataset), batch_size=args.batch_size,
-                                                          device=args.device, sort=False, shuffle=True)
+def data_load_without_cv(fname, args, seed=1234, split_ratio=0.9):
+    TEXT   = Field(sequential=True, tokenize=str.split, batch_first=True, fix_length=56, lower=True)
+    LABEL  = LabelField(sequential=False, dtype=torch.float)
+    FIELDS = [('label', LABEL), ('text', TEXT)]
 
-    return train_iterator, valid_iterator
+    dataset = TabularDataset(fname, fields=FIELDS, format='csv', skip_header=True)
+
+    train_dataset, valid_dataset  = dataset.split(random_state=random.seed(seed), split_ratio=split_ratio)
+
+    TEXT.build_vocab(train_dataset)
+    LABEL.build_vocab(train_dataset)
+
+    train_iterator, valid_iterator = BucketIterator.splits((train_dataset, valid_dataset), batch_size=args.batch_size,
+                                                           device=args.device, sort=False, shuffle=True)
+
+    return TEXT, train_iterator, valid_iterator
 
 
 def collate_fn_padding(batch):
@@ -64,10 +74,10 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=64)
     args = parser.parse_args()
 
-    dataset = load_tabular_dataset(args.processed_csv)
+    # dataset = load_tabular_dataset(args.processed_csv)
     # train_dataset, test_dataset = data_load_without_cv(dataset)
     # print(f"train_dataset: {len(train_dataset)}\ntest_dataset: {len(test_dataset)}")
-
-    for i in range(10):
-        train_dataset, test_dataset = data_load_with_cv(dataset, args, cv_index=i)
-        print(f"train_dataset: {len(train_dataset)}\ntest_dataset: {len(test_dataset)}")
+    #
+    # for i in range(10):
+    #     train_dataset, test_dataset = data_load_with_cv(dataset, args, cv_index=i)
+    #     print(f"train_dataset: {len(train_dataset)}\ntest_dataset: {len(test_dataset)}")

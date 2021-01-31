@@ -8,34 +8,34 @@ class PolarCNN(nn.Module):
     def __init__(self, vocab_size, pad_idx, args):
         super().__init__()
         self.args = args
-        print(f"CNN mode: {self.args.mode}")
+        print(f"CNN mode: {self.args.cnn_mode}")
 
-        self.base_embedding       = nn.Embedding(vocab_size, args.embedding_dim, padding_idx=pad_idx)
-        self.additional_embedding = nn.Embedding(vocab_size, args.embedding_dim, padding_idx=pad_idx)
+        self.base_embedding       = nn.Embedding(vocab_size, self.args.embedding_dim, padding_idx=pad_idx)
+        self.additional_embedding = nn.Embedding(vocab_size, self.args.embedding_dim, padding_idx=pad_idx)
 
         self.convs = nn.ModuleList([
-            nn.Conv2d(in_channels=1,
-                      out_channels=args.n_filters,
-                      kernel_size=(fs, args.embedding_dim))
-            for fs in args.filter_sizes
+            nn.Conv1d(in_channels=self.args.embedding_dim,
+                      out_channels=self.args.filter_number,
+                      kernel_size=fs)
+            for fs in self.args.filter_size
         ])
 
-        self.fc = nn.Linear(len(args.filter_sizes) * args.n_filters, args.output_dim)
-        self.dropout = nn.Dropout(args.dropout)
+        self.fc = nn.Linear(len(self.args.filter_size) * self.args.filter_number, self.args.output_dim)
+        self.dropout = nn.Dropout(self.args.dropout_rate)
 
     def forward(self, text):
-        if self.args.mode == 'static' or self.args.mode == 'nonstatic':
+        if self.args.cnn_mode == 'static' or self.args.cnn_mode == 'nonstatic':
             base_embedded = self.base_embedding(text)
-            base_embedded = base_embedded.unsqueeze(1)
-            base_conved = [F.relu(conv(base_embedded)).squeeze(3) for conv in self.convs]
-        elif self.args.mode == 'multi':
+            base_embedded = base_embedded.permute(0, 2, 1)
+            base_conved = [F.relu(conv(base_embedded)) for conv in self.convs]
+        elif self.args.cnn_mode == 'multi':
             base_embedded = self.base_embedding(text)
-            base_embedded = base_embedded.unsqueeze(1)
-            base_conved = [F.relu(conv(base_embedded)).squeeze(3) for conv in self.convs]
+            base_embedded = base_embedded.permute(0, 2, 1)
+            base_conved = [F.relu(conv(base_embedded)) for conv in self.convs]
 
             additional_embedded = self.additional_embedding(text)
-            additional_embedded = additional_embedded.unsqueeze(1)
-            additional_conved = [F.relu(conv(additional_embedded)).squeeze(3) for conv in self.convs]
+            additional_embedded = additional_embedded.permute(0, 2, 1)
+            additional_conved = [F.relu(conv(additional_embedded)) for conv in self.convs]
 
             base_conved = [base_conved[i] + additional_conved[i] for i in range(len(base_conved))]
 
