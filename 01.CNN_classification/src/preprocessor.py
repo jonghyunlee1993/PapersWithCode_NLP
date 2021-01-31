@@ -14,7 +14,7 @@ class Preprocessor:
         self.result_csv = os.path.join(self.data_path, self.args.processed_csv)
 
     def build_data(self):
-        if not  os.path.isfile(self.result_pickle):
+        if not os.path.isfile(self.result_pickle):
             pos = util.open_file(self.pos_data)
             neg = util.open_file(self.neg_data)
 

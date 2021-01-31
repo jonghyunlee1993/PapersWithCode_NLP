@@ -25,6 +25,7 @@ def train(model, iterator, optimizer, criterion, max_norm_sacling=False):
 
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
+
 def max_norm_scailing(model, max_val=3, eps=1e-8):
     param = model.fc.weight.norm()
     norm = param.norm(2, dim=0, keepdim=True)
@@ -32,6 +33,7 @@ def max_norm_scailing(model, max_val=3, eps=1e-8):
     param = param * (desired / (eps + norm))
 
     return param
+
 
 def evaluate(model, iterator, criterion):
     epoch_loss = 0
@@ -50,16 +52,23 @@ def evaluate(model, iterator, criterion):
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
 
+def proc_special_token(model, UNK_IDX, PAD_IDX, EMBEDDING_DIM):
+    model.embedding.weight.data[UNK_IDX] = torch.nn.init.uniform_(torch.empty(EMBEDDING_DIM), -0.25, 0.25)
+    model.embedding.weight.data[PAD_IDX] = torch.zeros(EMBEDDING_DIM)
+
+    return model
+
+
 def predict(TEXT, sentence, model, device, fixed_length=56):
-    word2id = []
+    word2index = []
 
     for word in sentence.split():
-        word2id.append(TEXT.vocab.stoi[word])
+        word2index.append(TEXT.vocab.stoi[word])
 
-    word2id = word2id + [1] * (fixed_length - len(word2id))
-    input_tensor = torch.LongTensor(word2id).to(device).unsqueeze(0)
+    word2index = word2index + [1] * (fixed_length - len(word2index))
+    input_tensor = torch.LongTensor(word2index).to(device).unsqueeze(0)
     probability = np.squeeze(torch.sigmoid(model(input_tensor)).detach().numpy()[0], 0)
-    predicted_label = 'Pos' if probability >= 0.5 else 'Neg'
+    predicted_label = 'Positive' if probability >= 0.5 else 'Negative'
 
     return probability, predicted_label
 

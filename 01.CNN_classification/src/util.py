@@ -1,3 +1,4 @@
+import os
 import gensim
 import pickle
 import pandas as pd
@@ -41,9 +42,19 @@ def generate_review_data(start_index, label, sentences, reviews):
     return reviews
 
 
-def load_pretrained_word2vec(word2vec_path):
-    word2vec = gensim.models.keyedvectors._load_word2vec_format(word2vec_path, binary=True)
-    word2vec_index = get_word2vec_index(word2vec)
+def load_pretrained_word2vec(data_path):
+    pretrained_model_fname = os.path.join(data_path, "GoogleNews-vectors-negative300.bin.gz")
+    word2vec_index_fname   = os.path.join(data_path, "word2vec_index.pickle")
+
+    if os.path.isfile(word2vec_index_fname):
+        print("word2vec_index pickle was already exist")
+        word2vec_index = load_pickle(word2vec_index_fname)
+    else:
+        print("\nload pretrained word2vec model ... ")
+        word2vec = gensim.models.keyedvectors.load_word2vec_format(pretrained_model_fname, binary=True)
+        word2vec_index = get_word2vec_index(word2vec)
+        save_pickle(word2vec_index_fname, word2vec_index)
+        print("\nword2vec_index pickle was saved for future study")
 
     return word2vec_index
 

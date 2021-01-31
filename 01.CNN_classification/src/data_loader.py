@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 
 from sklearn.model_selection import KFold
 from torch.utils.data import Subset, DataLoader
-from torchtext.data import Field, LabelField, TabularDataset
+from torchtext.data import Field, LabelField, TabularDataset, BucketIterator
 
 
 def load_tabular_dataset(fname, fix_length=56):
@@ -33,18 +33,20 @@ def data_load_with_cv(dataset, args, cv_index=0, seed=1234, n_split=10):
             train_subset   = Subset(dataset, train_index)
             train_iterator = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn_padding)
 
-            test_subset    = Subset(dataset, test_index)
-            test_iterator  = DataLoader(test_subset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn_padding)
+            valid_subset    = Subset(dataset, test_index)
+            valid_iterator  = DataLoader(valid_subset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn_padding)
 
             break
 
-    return train_iterator, test_iterator
+    return train_iterator, valid_iterator
 
 
-def data_load_without_cv(dataset, seed=1234, split_ratio=0.9):
-    train_dataset, valid_dataset = dataset.split(random_state=random.seed(seed), split_ratio=split_ratio)
+def data_load_without_cv(dataset, args, seed=1234, split_ratio=0.9):
+    train_dataset, valid_dataset  = dataset.split(random_state=random.seed(seed), split_ratio=split_ratio)
+    train_iterator, valid_iterator = BucketIterator.splits((train_dataset, test_dataset), batch_size=args.batch_size,
+                                                          device=args.device, sort=False, shuffle=True)
 
-    return train_dataset, valid_dataset
+    return train_iterator, valid_iterator
 
 
 def collate_fn_padding(batch):
