@@ -24,7 +24,8 @@ class Main:
     def run(self):
         self.set_seed()
 
-        Preprocessor()
+        reviews, word2index = self.preprocessor.build_data()
+
 
 
 

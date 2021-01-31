@@ -10,10 +10,11 @@ class Preprocessor:
         self.data_path = self.args.data_path
         self.pos_data = os.path.join(self.data_path, self.args.pos_data)
         self.neg_data = os.path.join(self.data_path, self.args.neg_data)
-        self.result = os.path.join(self.data_path, self.args.preprocessed_data)
+        self.result_pickle = os.path.join(self.data_path, self.args.processed_pickle)
+        self.result_csv = os.path.join(self.data_path, self.args.processed_csv)
 
     def build_data(self):
-        if not  os.path.isfile(self.result):
+        if not  os.path.isfile(self.result_pickle):
             pos = util.open_file(self.pos_data)
             neg = util.open_file(self.neg_data)
 
@@ -28,8 +29,8 @@ class Preprocessor:
 
             reviews = [0] * tot_length
 
-            reviews = util.generate_review_data(1, pos_sentences, reviews)
-            reviews = util.generate_review_data(0, neg_sentences, reviews)
+            reviews = util.generate_review_data(start_index=0, label=1, sentences=pos_sentences, reviews=reviews)
+            reviews = util.generate_review_data(start_index=pos_length, label=0, sentences=neg_sentences, reviews=reviews)
 
             word_to_idx = {'@pad': 0}
 
@@ -40,9 +41,10 @@ class Preprocessor:
 
             data_to_pickle = [reviews, word_to_idx]
 
-            util.save_pickle(self.result, data_to_pickle)
+            util.save_pickle(self.result_pickle, data_to_pickle)
+            util.save_csv(self.result_csv, reviews)
         else:
-            reviews, word_to_idx = util.load_pickle(self.result)
+            reviews, word_to_idx = util.load_pickle(self.result_pickle)
 
         print(f'number of reviews: {len(reviews)}\nnumber of vocabularies: {len(word_to_idx)}')
 
@@ -75,7 +77,8 @@ if __name__ == "__main__":
     parser.add_argument('--data_path', type=str, default='../data', help='data folder')
     parser.add_argument('--pos_data', type=str, default='rt-polarity.pos', help='file name of positive raw data')
     parser.add_argument('--neg_data', type=str, default='rt-polarity.neg', help='file name of negative raw data')
-    parser.add_argument('--preprocessed_data', type=str, default='polarity_data.pickle', help='file name of processed data')
+    parser.add_argument('--processed_pickle', type=str, default='polarity_data.pickle', help='file name of processed data')
+    parser.add_argument('--processed_csv', type=str, default='polarity_data.csv', help='file name of processed data')
     args = parser.parse_args()
 
     preprocessor = Preprocessor(args)

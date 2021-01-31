@@ -1,5 +1,6 @@
 import gensim
 import pickle
+import pandas as pd
 
 
 def open_file(fname):
@@ -25,11 +26,17 @@ def load_pickle(fname):
     return data
 
 
-def generate_review_data(label, sentences, reviews):
+def save_csv(fname, data):
+    print(data)
+    df = pd.DataFrame(data)
+    df.to_csv(fname, index=False, encoding='utf-8')
+
+
+def generate_review_data(start_index, label, sentences, reviews):
     for i, sent in enumerate(sentences):
         datum = {'label': label,
                  'text': sent}
-        reviews[i] = datum
+        reviews[start_index + i] = datum
 
     return reviews
 
