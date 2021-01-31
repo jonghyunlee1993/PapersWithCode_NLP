@@ -1,9 +1,8 @@
-import argparse
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import argparse
 
 class PolarCNN(nn.Module):
     def __init__(self, vocab_size, pad_idx, args):

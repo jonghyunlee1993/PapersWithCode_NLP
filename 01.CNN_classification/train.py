@@ -13,7 +13,7 @@ import argparse
 
 print(f"PyTorch version: {torch.__version__}\nTorchtext version: {torchtext.__version__}")
 
-class Main:
+class Trainer:
     def __init__(self, args):
         self.args = args
         self.args.device  = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -37,8 +37,6 @@ class Main:
         reviews, word2index = self.preprocessor.build_data()
         self.dataset = load_tabular_dataset(self.args.procssed_csv)
 
-
-
         if self.args.cv_mode:
             for cv_index in range(self.args.cv_split):
                 self.train_iterator, self.valid_iterator = data_load_with_cv(self.dataset)
@@ -49,7 +47,20 @@ class Main:
             self.pretrained_embedding = load_pretrained_word2vec(self.args.data_path)
             self.model = PolarCNN(self.vocab_size, self.pad_idx, self.args)
 
-
+            if self.args.cnn_mode == 'static':
+                self.model.base_embedding.weight.data.copy_(self.pretrained_embedding)
+                self.model.base_embedding.weight.requires_grad = False
+            elif self.args.cnn_mode == 'nonstatic':
+                self.model.base_embedding.weight.data.copy_(self.pretrained_embedding)
+                self.model.base_embedding.weight.requires_grad = True
+            elif self.args.cnn_mode == 'multi':
+                self.model.base_embedding.weight.data.copy_(self.pretrained_embedding)
+                self.model.base_embedding.weight.requires_grad = False
+                self.model.additional_embedding.weight.data.copy_(self.pretrained_embedding)
+                self.model.additional_embedding.weight.requires_grad = True
+            else:
+                print("choose between static / nonstatic / multi")
+                raise()
 
 
 if __name__ == "__main__":
