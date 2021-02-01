@@ -63,15 +63,16 @@ def evaluate(model, iterator, criterion):
 
 def save_model_param(fname, model):
     torch.save(model.state_dict(), fname)
-    print("best model parameter was saved!\n")
+    print("\nbest model parameter was saved!")
 
 
 def print_training_log(epoch, start_time, end_time, train_loss, train_acc, valid_loss, valid_acc):
     epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-
+    print()
     print(f'\tEpoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
     print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
     print(f'\tTest Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%')
+
 
 def predict(TEXT, sentence, model, device, fixed_length=56):
     word2index = []

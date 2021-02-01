@@ -17,9 +17,9 @@ print(f"PyTorch version: {torch.__version__}\nTorchtext version: {torchtext.__ve
 class Trainer:
     def __init__(self, args):
         self.args = args
-        self.args.device  = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_param  = os.path.join("weights", "best_model.pt")
-        self.preprocessor = Preprocessor(self.args)
+        self.args.device        = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model_param_fname  = os.path.join("weights", "best_model.pt")
+        self.preprocessor       = Preprocessor(self.args)
 
     def set_seed(self):
         random.seed(self.args.seed)
@@ -88,8 +88,8 @@ class Trainer:
                 end_time = get_time()
 
                 if valid_loss < best_valid_loss:
-                    best_valid = valid_loss
-                    save_model_param(self.model_param, self.model)
+                    best_valid_loss = valid_loss
+                    save_model_param(self.model_param_fname, self.model)
 
                 print_training_log(epoch, start_time, end_time, train_loss, train_acc, valid_loss, valid_acc)
 
