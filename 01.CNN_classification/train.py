@@ -38,7 +38,6 @@ class Trainer:
         self.set_seed()
 
         reviews, word2index = self.preprocessor.build_data()
-        # self.dataset, self.vocab_size, self.pad_index, self.unk_index = load_tabular_dataset(os.path.join(self.args.data_path, self.args.processed_csv))
 
         if self.args.cv_mode:
             for cv_index in range(self.args.cv_split):
@@ -52,8 +51,6 @@ class Trainer:
 
             self.TEXT.vocab.set_vectors(word2vec_index, torch.from_numpy(word2vec_vector).float().to(self.args.device),
                                         self.args.embedding_dim)
-
-
 
             self.model = PolarCNN(self.vocab_size, self.pad_index, self.args).to(self.args.device)
 
@@ -93,6 +90,13 @@ class Trainer:
 
                 print_training_log(epoch, start_time, end_time, train_loss, train_acc, valid_loss, valid_acc)
 
+        # for evaluattion
+        self.model = torch.load_state_dict(torch.load(self.model_param_fname))
+        start_time = get_time()
+        test_loss, test_acc = evaluate(self.model, self.valid_iterator, self.critierion)
+        end_time = get_time()
+        print_evaluation_log(start_time, end_time, test_loss, test_acc)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -107,7 +111,7 @@ if __name__ == "__main__":
     parser.add_argument('--cv_mode', type=bool, default=False, help="cross validation: [False] / True")
     parser.add_argument('--cv_split', type=int, default=10, help='number of split for cross validation')
     parser.add_argument('--device', type=str, default='cpu', help='[cpu] / cuda')
-    parser.add_argument('--cnn_mode', type=str, default='static', help="[static] / nonstatic / multi")
+    parser.add_argument('--cnn_mode', type=str, default='multi', help="[static] / nonstatic / multi")
     parser.add_argument('--max_norm_scaling', type=bool, default=False, help='[False] / True')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size for model training')
     parser.add_argument('--epochs', type=int, default=10, help='model training epochs')

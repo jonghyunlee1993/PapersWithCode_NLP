@@ -37,6 +37,7 @@ class PolarCNN(nn.Module):
             additional_embedded = additional_embedded.permute(0, 2, 1)
             additional_conved = [F.relu(conv(additional_embedded)) for conv in self.convs]
 
+            # multi channel을 add하는 방식으로
             base_conved = [base_conved[i] + additional_conved[i] for i in range(len(base_conved))]
 
         pooled = [F.max_pool1d(conv, conv.shape[2]).squeeze(2) for conv in base_conved]

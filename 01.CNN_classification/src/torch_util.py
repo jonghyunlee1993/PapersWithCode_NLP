@@ -71,7 +71,14 @@ def print_training_log(epoch, start_time, end_time, train_loss, train_acc, valid
     print()
     print(f'\tEpoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
     print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
-    print(f'\tTest Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%')
+    print(f'\tVal Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%')
+
+
+def print_evaluation_log(epoch, start_time, end_time, test_loss, test_acc):
+    epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+    print()
+    print(f'\tEpoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
+    print(f'\tVal Loss: {test_loss:.3f} |  Val. Acc: {test_acc * 100:.2f}%')
 
 
 def predict(TEXT, sentence, model, device, fixed_length=56):
