@@ -18,7 +18,7 @@ class Trainer:
     def __init__(self, args):
         self.args = args
         self.args.device        = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_param_fname  = os.path.join("weights", "best_model.pt")
+        self.model_param_fname  = os.path.join("weights", f"best_model_{self.args.cnn_mode}.pt")
         self.preprocessor       = Preprocessor(self.args)
 
     def set_seed(self):
@@ -91,7 +91,7 @@ class Trainer:
                 print_training_log(epoch, start_time, end_time, train_loss, train_acc, valid_loss, valid_acc)
 
         # for evaluattion
-        self.model = torch.load_state_dict(torch.load(self.model_param_fname))
+        self.model.load_state_dict(torch.load(self.model_param_fname))
         start_time = get_time()
         test_loss, test_acc = evaluate(self.model, self.valid_iterator, self.critierion)
         end_time = get_time()

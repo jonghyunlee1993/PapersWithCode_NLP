@@ -81,18 +81,24 @@ def print_evaluation_log(epoch, start_time, end_time, test_loss, test_acc):
     print(f'\tVal Loss: {test_loss:.3f} |  Val. Acc: {test_acc * 100:.2f}%')
 
 
-def predict(TEXT, sentence, model, device, fixed_length=56):
+def predict(TEXT, args, model, fixed_length=56):
     word2index = []
 
-    for word in sentence.split():
+    for word in args.input_sent.split():
         word2index.append(TEXT.vocab.stoi[word])
 
     word2index = word2index + [1] * (fixed_length - len(word2index))
-    input_tensor = torch.LongTensor(word2index).to(device).unsqueeze(0)
+    input_tensor = torch.LongTensor(word2index).to(args.device).unsqueeze(0)
     probability = np.squeeze(torch.sigmoid(model(input_tensor)).detach().numpy()[0], 0)
     predicted_label = 'Positive' if probability >= 0.5 else 'Negative'
 
     return probability, predicted_label
+
+
+def print_predict_log(args, probability, predicted_label):
+    print()
+    print(f"\tinput sent: {args.input_sent}")
+    print(f'\tPredicted Label: {predicted_label} |  Probability: {probability * 100:.2f}%')
 
 
 def get_time():
