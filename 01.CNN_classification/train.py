@@ -72,13 +72,14 @@ class Trainer:
                 raise()
 
             # define optimizer & criterion
-            self.optimizer  = torch.optim.Adadelta(self.model.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+            # self.optimizer  = torch.optim.Adadelta(self.model.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+            self.optimizer = torch.optim.Adam(self.model.parameters())
             self.critierion = torch.nn.BCEWithLogitsLoss().to(self.args.device)
 
             best_valid_loss = float('inf')
             for epoch in range(self.args.epochs):
                 start_time = get_time()
-                train_loss, train_acc = train(self.model, self.train_iterator, self.optimizer, self.critierion, self.args.max_norm_scaling)
+                train_loss, train_acc = train(self.model, self.train_iterator, self.optimizer, self.critierion, self.args)
                 valid_loss, valid_acc = evaluate(self.model, self.valid_iterator, self.critierion)
                 end_time = get_time()
 
@@ -110,10 +111,11 @@ if __name__ == "__main__":
     parser.add_argument('--cnn_mode', type=str, default='multi', help="[static] / nonstatic / multi")
     parser.add_argument('--max_norm_scaling', type=bool, default=False, help='[False] / True')
     parser.add_argument('--batch_size', type=int, default=64, help='batch size for model training')
-    parser.add_argument('--epochs', type=int, default=10, help='model training epochs')
+    parser.add_argument('--epochs', type=int, default=5, help='model training epochs')
     parser.add_argument('--embedding_dim', type=int, default=300, help='pretrained embedding vector dimension')
     parser.add_argument('--filter_number', type=int, default=100, help='number of output of each filters')
     parser.add_argument('--filter_size', type=list, default=[3, 4, 5], help='size of each filters')
+    parser.add_argument('--padding_size', type=list, default=[0, (0, 1), (0, 2)], help='size of zero padding')
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='rate of dropout')
     parser.add_argument('--output_dim', type=int, default=1, help='dimension of output')
     parser.add_argument('--seed', type=int, default=1234, help='seed number, default: 1234')

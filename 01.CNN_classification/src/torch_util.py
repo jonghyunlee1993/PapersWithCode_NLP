@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 
-def train(model, iterator, optimizer, criterion, max_norm_sacling=False):
+def train(model, iterator, optimizer, criterion, args):
     epoch_loss = 0
     epoch_acc = 0
 
@@ -18,8 +18,13 @@ def train(model, iterator, optimizer, criterion, max_norm_sacling=False):
         loss.backward()
         optimizer.step()
 
-        if max_norm_sacling:
-            model.param.data = max_norm_sacling(model)
+        if args.max_norm_scaling:
+            max_val = 3
+            eps     = 1e-5
+            param = model.fc.weight.norm()
+            norm = param.norm(2, dim=0, keepdim=True)
+            desired = torch.clamp(norm, 0, max_val)
+            param.data = param * (desired / (eps + norm))
 
         epoch_loss += loss.item()
         epoch_acc += acc.item()
@@ -27,13 +32,13 @@ def train(model, iterator, optimizer, criterion, max_norm_sacling=False):
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
 
-def max_norm_scailing(model, max_val=3, eps=1e-8):
+def max_norm_scaling(model, max_val=3, eps=1e-8):
     param = model.fc.weight.norm()
     norm = param.norm(2, dim=0, keepdim=True)
     desired = torch.clamp(norm, 0, max_val)
-    param = param * (desired / (eps + norm))
+    param.data = param * (desired / (eps + norm))
 
-    return param
+    return param.data
 
 
 def proc_special_token(embedding, TEXT, EMBEDDING_DIM):

@@ -16,7 +16,8 @@ class PolarCNN(nn.Module):
         self.convs = nn.ModuleList([
             nn.Conv1d(in_channels=self.args.embedding_dim,
                       out_channels=self.args.filter_number,
-                      kernel_size=fs)
+                      kernel_size=fs,
+                      )
             for fs in self.args.filter_size
         ])
 
