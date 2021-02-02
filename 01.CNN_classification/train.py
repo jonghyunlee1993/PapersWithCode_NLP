@@ -1,7 +1,4 @@
-import torch
-import random
 import torchtext
-import numpy as np
 
 from src.data_loader import *
 from src.preprocessor import Preprocessor
@@ -17,9 +14,9 @@ print(f"PyTorch version: {torch.__version__}\nTorchtext version: {torchtext.__ve
 class Trainer:
     def __init__(self, args):
         self.args = args
-        self.args.device        = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_param_fname  = os.path.join("weights", f"best_model_{self.args.cnn_mode}.pt")
-        self.preprocessor       = Preprocessor(self.args)
+        self.args.device       = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model_param_fname = os.path.join("weights", f"best_model_{self.args.pretrained_model}_{self.args.cnn_mode}.pt")
+        self.preprocessor      = Preprocessor(self.args)
 
     def set_seed(self):
         random.seed(self.args.seed)
@@ -32,7 +29,7 @@ class Trainer:
         self.pad_index = self.TEXT.vocab.stoi['<pad>']
         self.unk_index = self.TEXT.vocab.stoi['<unk>']
 
-        print(f"input dim: {self.vocab_size}\npad index: {self.pad_index}\nunk index: {self.unk_index}")
+        print(f"\ninput dim: {self.vocab_size}\npad index: {self.pad_index}\nunk index: {self.unk_index}")
 
     def run(self):
         self.set_seed()
@@ -47,7 +44,8 @@ class Trainer:
             processed_csv_fname = os.path.join(self.args.data_path, self.args.processed_csv)
             self.TEXT, self.train_iterator, self.valid_iterator = data_load_without_cv(processed_csv_fname, self.args)
             self.get_vocab_info()
-            word2vec_index, word2vec_vector = load_pretrained_word2vec(self.args.data_path, self.TEXT)
+            print(f"\npretrained embedding model: {self.args.pretrained_model}")
+            word2vec_index, word2vec_vector = load_pretrained_embedding(self.args)
 
             self.TEXT.vocab.set_vectors(word2vec_index, torch.from_numpy(word2vec_vector).float().to(self.args.device),
                                         self.args.embedding_dim)
@@ -80,7 +78,7 @@ class Trainer:
             best_valid_loss = float('inf')
             for epoch in range(self.args.epochs):
                 start_time = get_time()
-                train_loss, train_acc = train(self.model, self.train_iterator, self.optimizer, self.critierion)
+                train_loss, train_acc = train(self.model, self.train_iterator, self.optimizer, self.critierion, self.args.max_norm_scaling)
                 valid_loss, valid_acc = evaluate(self.model, self.valid_iterator, self.critierion)
                 end_time = get_time()
 
@@ -92,10 +90,8 @@ class Trainer:
 
         # for evaluattion
         self.model.load_state_dict(torch.load(self.model_param_fname))
-        start_time = get_time()
         test_loss, test_acc = evaluate(self.model, self.valid_iterator, self.critierion)
-        end_time = get_time()
-        print_evaluation_log(start_time, end_time, test_loss, test_acc)
+        print_evaluation_log(test_loss, test_acc)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -121,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--dropout_rate', type=float, default=0.5, help='rate of dropout')
     parser.add_argument('--output_dim', type=int, default=1, help='dimension of output')
     parser.add_argument('--seed', type=int, default=1234, help='seed number, default: 1234')
-    parser.add_argument('--pretrained_model', type=str, default='word2vec', help='[word2vec] / glove')
+    parser.add_argument('--pretrained_model', type=str, default='glove', help='[word2vec] / glove')
 
     args = parser.parse_args()
 

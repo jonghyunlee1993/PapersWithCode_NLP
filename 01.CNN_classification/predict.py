@@ -1,7 +1,4 @@
-import torch
-import random
 import torchtext
-import numpy as np
 
 from src.data_loader import *
 from src.preprocessor import Preprocessor
@@ -16,9 +13,9 @@ print(f"PyTorch version: {torch.__version__}\nTorchtext version: {torchtext.__ve
 class Predictor:
     def __init__(self, args):
         self.args = args
-        self.args.device        = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_param_fname  = os.path.join("weights", f"best_model_{self.args.cnn_mode}.pt")
-        self.preprocessor       = Preprocessor(self.args)
+        self.args.device       = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model_param_fname = os.path.join("weights", f"best_model_{self.args.pretrained_model}_{self.args.cnn_mode}.pt")
+        self.preprocessor      = Preprocessor(self.args)
 
     def set_seed(self):
         random.seed(self.args.seed)
