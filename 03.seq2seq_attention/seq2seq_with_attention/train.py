@@ -1,14 +1,14 @@
-from seq2seq_with_attention.utils import print_loss
 import time
 import torch
 import random
-import utils
+
 import config
 import numpy as np
 
-from model import Encoder, Decoder, Attention, Seq2Seq
-from model import init_weigths, count_parameters
-from custom_dataloader import CustomDataloader
+from seq2seq_with_attention.utils import epoch_time, print_loss
+from seq2seq_with_attention.seq2seq_model import init_weights, count_parameters
+from seq2seq_with_attention.seq2seq_model import Encoder, Decoder, Seq2Seq, Attention
+from seq2seq_with_attention.custom_dataloader import CustomDataloader
 
 class Trainer:
     def __init__(self) -> None:
@@ -35,7 +35,7 @@ class Trainer:
             
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
-                torch.save(model.state_dict(), 'tut3-model.pt')
+                torch.save(self.model.state_dict(), 'tut3-model.pt')
             
             print(f"Epoch Num: {epoch}")
             epoch_time(start_time, end_time)
@@ -100,7 +100,7 @@ class Trainer:
                 
                 output = self.model(src, trg, teacher_forching_ratio=0)
                 output_dim = output.shape[-1]
-                output = oputput[1:].view(-1, output_dim)
+                output = output[1:].view(-1, output_dim)
                 trg = trg[1:].view(-1)
                 loss = self.criterion(output, trg)
                 

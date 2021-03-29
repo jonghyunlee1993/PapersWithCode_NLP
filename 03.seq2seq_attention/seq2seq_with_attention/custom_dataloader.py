@@ -1,6 +1,6 @@
 import spacy
 import fr_core_news_sm, en_core_web_sm
-from torchtext.legacy. data import Field, BucketIterator
+from torchtext.legacy.data import Field, BucketIterator
 from torchtext.legacy.dataset import Multi30k
 
 class CustomDataloader:

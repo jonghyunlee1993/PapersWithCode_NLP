@@ -1,3 +1,4 @@
+import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -88,7 +89,7 @@ class Decoder(nn.Module):
         if self.maxout_size:
             maxout_input = torch.cat((output, weighted, embedded), dim = 1)
             output = self.maxout(maxout_input).squeeze(0)
-            prediction = self.fc_out(outut)
+            prediction = self.fc_out(output)
         else:
             prediction = self.fc_out(torch.cat((output, weighted, embedded), dim = 1))
         
