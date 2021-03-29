@@ -1,21 +1,19 @@
 import time
 import torch
 import random
-
-import config
 import numpy as np
 
+import seq2seq_with_attention.config as config
 from seq2seq_with_attention.utils import epoch_time, print_loss
 from seq2seq_with_attention.seq2seq_model import init_weights, count_parameters
 from seq2seq_with_attention.seq2seq_model import Encoder, Decoder, Seq2Seq, Attention
 from seq2seq_with_attention.custom_dataloader import CustomDataloader
 
 class Trainer:
-    def __init__(self) -> None:
+    def __init__(self):
         self.set_seed()
         self.DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.BATCH_SIZE = config.BATCH_SIZE
-        
         self.dataloader = CustomDataloader(self.BATCH_SIZE, self.DEVICE)
 
         
@@ -41,7 +39,6 @@ class Trainer:
             epoch_time(start_time, end_time)
             print_loss(train_loss, valid_loss)
             
-            
         
     def set_seed(self):
         seed = config.SEED
@@ -58,10 +55,10 @@ class Trainer:
         self.decoder   = Decoder(self.OUTPUT_DIM, config.DEC_EMB_DIM, config.ENC_HID_DIM, config.DEC_HID_DIM, config.DEC_DROPOUT, self.attention, config.MAXOUT_SIZE)
         self.model     = Seq2Seq(self.encoder, self.decoer, self.DEVICE).to(self.DEVICE)
 
-        self.model.apply(init_weigths)
+        self.model.apply(init_weights)
         count_parameters(self.model)
-        self.optimizer = optim.Adam(self.model.parameters())
-        self.criterion = nn.CrossEntropyLoss(ignore_index=self.dataloader.TRG.vocab.stoi[self.dataloader.TRG.pad_token])
+        self.optimizer = torch.optim.Adam(self.model.parameters())
+        self.criterion = torch.nn.CrossEntropyLoss(ignore_index=self.dataloader.TRG.vocab.stoi[self.dataloader.TRG.pad_token])
     
         
     def train(self):
@@ -108,8 +105,6 @@ class Trainer:
                 
         return epoch_loss / len(self.dataloader.valid_iterator)
                 
-        
-    
         
 if __name__ == "__main__":
     trainer = Trainer()
