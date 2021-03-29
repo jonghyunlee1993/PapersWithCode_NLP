@@ -26,11 +26,16 @@ class Trainer:
         
         self.define_model()
         
+        best_valid_loss = float('inf')
         for epoch in range(config.TRAIN_EPOCHS):
             start_time = time.time()
             train_loss = self.train()
             valid_loss = self.evaluate()
             end_time   = time.time()
+            
+            if valid_loss < best_valid_loss:
+                best_valid_loss = valid_loss
+                torch.save(model.state_dict(), 'tut3-model.pt')
             
             print(f"Epoch Num: {epoch}")
             epoch_time(start_time, end_time)
