@@ -2,3 +2,4 @@ spacy
 numpy
 torch
 torchtext
+sacrebleu
