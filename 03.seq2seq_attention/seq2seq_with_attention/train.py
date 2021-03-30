@@ -77,7 +77,6 @@ class Trainer:
             
             self.optimizer.zero_grad()
             output = self.model(src, trg, config.TEACHER_FORCING_RATIO)
-            print("Start Calcuiating BLEU score ... ")
             bleu_score = get_bleu_score(output, trg, self.dataloader.TRG)
             
             output_dim = output.shape[-1]
@@ -106,7 +105,7 @@ class Trainer:
                 src = batch.src
                 trg = batch.trg
                 
-                output = self.model(src, trg, teacher_forching_ratio=0)
+                output = self.model(src, trg, 0)
                 bleu_score = get_bleu_score(output, trg, self.dataloader.TRG)
                 
                 output_dim = output.shape[-1]
