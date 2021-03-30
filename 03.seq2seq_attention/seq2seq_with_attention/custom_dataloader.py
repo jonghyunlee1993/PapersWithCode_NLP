@@ -38,7 +38,7 @@ class CustomDataloader:
                          lower=True)
         
         self.train_data, self.valid_data, self.test_data = Multi30k.splits(exts=(".fr", "en"), fields=(self.SRC, self.TRG))
-        
+
         self.SRC.build_vocab(self.train_data, min_freq=2)
         self.TRG.build_vocab(self.train_data, min_freq=2)
         
@@ -65,3 +65,9 @@ class CustomDataloader:
             sort_within_batch=True,
             sort_key=lambda x: len(x.src)
         )
+
+if __name__ == "__main__":
+	device = "cpu"
+	data_loader = CustomDataloader(128, device)
+	data_loader.run()
+
