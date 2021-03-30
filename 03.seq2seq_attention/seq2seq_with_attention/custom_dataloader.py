@@ -37,7 +37,7 @@ class CustomDataloader:
                          unk_token=self.pad_token,
                          lower=True)
         
-        self.train_data, self.valid_data, self.test_data = Multi30k.splits(exts=(".fr", "en"), fields=(self.SRC, self.TRG))
+        self.train_data, self.valid_data, self.test_data = Multi30k.splits(exts=(".fr", ".en"), fields=(self.SRC, self.TRG))
 
         self.SRC.build_vocab(self.train_data, min_freq=2)
         self.TRG.build_vocab(self.train_data, min_freq=2)
