@@ -29,6 +29,7 @@ class Trainer:
         for epoch in range(config.TRAIN_EPOCHS):
             start_time = time.time()
             train_loss, train_bleu = self.train()
+            print("Start Evaluation ... ")
             valid_loss, valid_bleu = self.evaluate()
             # train_loss = self.train()
             # valid_loss = self.evaluate()
@@ -76,6 +77,7 @@ class Trainer:
             
             self.optimizer.zero_grad()
             output = self.model(src, trg, config.TEACHER_FORCING_RATIO)
+            print("Start Calcuiating BLEU score ... ")
             bleu_score = get_bleu_score(output, trg, self.dataloader.TRG)
             
             output_dim = output.shape[-1]
