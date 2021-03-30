@@ -61,7 +61,7 @@ class Trainer:
 
         self.model.apply(init_weights)
         count_parameters(self.model)
-        self.optimizer = torch.optim.Adam(self.model.parameters())
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config.LEARNING_RATE)
         self.criterion = torch.nn.CrossEntropyLoss(ignore_index=self.dataloader.TRG.vocab.stoi[self.dataloader.TRG.pad_token])
     
         
