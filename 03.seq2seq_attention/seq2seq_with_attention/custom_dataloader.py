@@ -1,12 +1,11 @@
 import spacy
-import fr_core_news_sm, en_core_web_sm, de_core_news_sm
+import fr_core_news_sm, en_core_web_sm
 from torchtext.legacy.data import Field, BucketIterator
 from torchtext.legacy.datasets import Multi30k
 
 class CustomDataloader:
     def __init__(self, BATCH_SIZE, DEVICE):
-        # self.spacy_fr = fr_core_news_sm.load()
-        self.spacy_fr = de_core_news_sm.load()
+        self.spacy_fr = fr_core_news_sm.load()
         self.spacy_en = en_core_web_sm.load()
         
         self.init_token = "<sos>"
@@ -38,7 +37,7 @@ class CustomDataloader:
                          unk_token=self.pad_token,
                          lower=True)
         
-        self.train_data, self.valid_data, self.test_data = Multi30k.splits(exts=(".de", "en"), fields=(self.SRC, self.TRG))
+        self.train_data, self.valid_data, self.test_data = Multi30k.splits(exts=(".fr", "en"), fields=(self.SRC, self.TRG))
         
         self.SRC.build_vocab(self.train_data, min_freq=2)
         self.TRG.build_vocab(self.train_data, min_freq=2)

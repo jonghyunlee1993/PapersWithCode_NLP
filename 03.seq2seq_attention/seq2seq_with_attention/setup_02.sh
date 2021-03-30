@@ -17,3 +17,6 @@ gzip -d .data/multi30k/val.en.gz
 
 gzip -d .data/multi30k/test_2016_flickr.fr.gz
 gzip -d .data/multi30k/test_2016_flickr.en.gz
+
+mv .data/multi30k/test_2016_flickr.fr .data/multi30k/test2016.fr
+mv .data/multi30k/test_2016_flickr.en .data/multi30k/test2016.en
