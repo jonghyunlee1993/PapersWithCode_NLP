@@ -24,13 +24,14 @@ class Trainer:
         
         self.define_model()
         
+        print("Start Training ... ")
         best_valid_loss = float('inf')
         for epoch in range(config.TRAIN_EPOCHS):
             start_time = time.time()
-            # train_loss, train_bleu = self.train()
-            # valid_loss, valid_bleu = self.evaluate()
-            train_loss = self.train()
-            valid_loss = self.evaluate()
+            train_loss, train_bleu = self.train()
+            valid_loss, valid_bleu = self.evaluate()
+            # train_loss = self.train()
+            # valid_loss = self.evaluate()
             end_time   = time.time()
             
             if valid_loss < best_valid_loss:
@@ -67,7 +68,7 @@ class Trainer:
     def train(self):
         self.model.train()
         epoch_loss = 0
-        # epoch_bleu = 0
+        epoch_bleu = 0
         
         for i, batch in enumerate(self.dataloader.train_iterator):
             src = batch.src
@@ -75,7 +76,7 @@ class Trainer:
             
             self.optimizer.zero_grad()
             output = self.model(src, trg, config.TEACHER_FORCING_RATIO)
-            # bleu_score = get_bleu_score(output, trg, self.dataloader.TRG)
+            bleu_score = get_bleu_score(output, trg, self.dataloader.TRG)
             
             output_dim = output.shape[-1]
             output = output[1:].view(-1, output_dim)
@@ -88,10 +89,10 @@ class Trainer:
             self.optimizer.step()
             
             epoch_loss += loss.item()
-            # epoch_bleu += bleu_score
+            epoch_bleu += bleu_score
             
-        # return epoch_loss / len(self.dataloader.train_iterator), epoch_bleu / len(self.dataloader.train_iterator)
-        return epoch_loss / len(self.dataloader.train_iterator)
+        return epoch_loss / len(self.dataloader.train_iterator), epoch_bleu / len(self.dataloader.train_iterator)
+        # return epoch_loss / len(self.dataloader.train_iterator)
         
     def evaluate(self):
         self.model.eval()
@@ -104,7 +105,7 @@ class Trainer:
                 trg = batch.trg
                 
                 output = self.model(src, trg, teacher_forching_ratio=0)
-                # bleu_score = get_bleu_score(output, trg, self.dataloader.TRG)
+                bleu_score = get_bleu_score(output, trg, self.dataloader.TRG)
                 
                 output_dim = output.shape[-1]
                 output = output[1:].view(-1, output_dim)
@@ -112,10 +113,10 @@ class Trainer:
                 loss = self.criterion(output, trg)
                 
                 epoch_loss += loss.item()
-                # epoch_bleu += bleu_score
+                epoch_bleu += bleu_score
                 
-        # return epoch_loss / len(self.dataloader.valid_iterator), epoch_bleu / len(self.dataloader.valid_iterator) 
-        return epoch_loss / len(self.dataloader.valid_iterator)
+        return epoch_loss / len(self.dataloader.valid_iterator), epoch_bleu / len(self.dataloader.valid_iterator) 
+        # return epoch_loss / len(self.dataloader.valid_iterator)
         
 if __name__ == "__main__":
     trainer = Trainer()
