@@ -24,5 +24,5 @@ gzip -d .data/multi30k/test_2016_flickr.en.gz
 mv .data/multi30k/test_2016_flickr.fr .data/multi30k/test2016.fr
 mv .data/multi30k/test_2016_flickr.en .data/multi30k/test2016.en
 
-python -m spacy download fr_core_news_sm
-python -m spacy download en_core_web_sm
+python3 -m spacy download fr_core_news_sm
+python3 -m spacy download en_core_web_sm
