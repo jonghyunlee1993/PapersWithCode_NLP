@@ -3,7 +3,7 @@ import torch
 import random
 import numpy as np
 
-import config as config
+import config
 from utils import epoch_time, print_loss, get_bleu_score, print_bleu
 from seq2seq_model import init_weights, count_parameters
 from seq2seq_model import Encoder, Decoder, Seq2Seq, Attention
@@ -43,7 +43,7 @@ class Trainer:
         
     def set_seed(self):
         seed = config.SEED
-        random.seed(config.seed)
+        random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
