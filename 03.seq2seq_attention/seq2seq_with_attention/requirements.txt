@@ -1,5 +1,5 @@
 spacy
 numpy
 torch
-torchtext
+torchtext==0.6.0
 sacrebleu
