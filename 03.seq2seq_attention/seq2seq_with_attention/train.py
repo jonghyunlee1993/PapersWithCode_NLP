@@ -98,7 +98,7 @@ class Trainer:
     def evaluate(self):
         self.model.eval()
         epoch_loss = 0
-        # epoch_bleu = 0
+        epoch_bleu = 0
         
         with torch.no_grad():
             for i, batch in enumerate(self.dataloader.valid_iterator):
