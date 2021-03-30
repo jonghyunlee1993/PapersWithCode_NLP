@@ -3,11 +3,11 @@ import torch
 import random
 import numpy as np
 
-import seq2seq_with_attention.config as config
-from seq2seq_with_attention.utils import epoch_time, print_loss, get_bleu_score, print_bleu
-from seq2seq_with_attention.seq2seq_model import init_weights, count_parameters
-from seq2seq_with_attention.seq2seq_model import Encoder, Decoder, Seq2Seq, Attention
-from seq2seq_with_attention.custom_dataloader import CustomDataloader
+import config as config
+from utils import epoch_time, print_loss, get_bleu_score, print_bleu
+from seq2seq_model import init_weights, count_parameters
+from seq2seq_model import Encoder, Decoder, Seq2Seq, Attention
+from custom_dataloader import CustomDataloader
 
 class Trainer:
     def __init__(self):
