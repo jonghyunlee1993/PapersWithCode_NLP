@@ -1,4 +1,4 @@
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 mkdir -p .data/multi30k
 git clone https://github.com/multi30k/dataset.git
