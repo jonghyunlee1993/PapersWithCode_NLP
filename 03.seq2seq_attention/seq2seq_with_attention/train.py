@@ -42,7 +42,7 @@ class Trainer:
             print(f"Epoch Num: {epoch}")
             epoch_time(start_time, end_time)
             print_loss(train_loss, valid_loss)
-            # print_bleu(train_bleu, valid_bleu)
+            print_bleu(train_bleu, valid_bleu)
             
         
     def set_seed(self):
