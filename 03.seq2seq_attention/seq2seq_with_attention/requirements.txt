@@ -1,5 +1,0 @@
-spacy
-numpy
-torch
-torchtext==0.6.0
-sacrebleu
