@@ -1,0 +1,327 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "id": "56CgMd4i688Z"
+   },
+   "outputs": [],
+   "source": [
+    "import torch\n",
+    "import torch.nn as nn\n",
+    "import torch.nn.functional as F\n",
+    "import torch.optim as optim\n",
+    "\n",
+    "from torch.nn.utils.rnn import pad_sequence\n",
+    "from torch.utils.data import Dataset, DataLoader, TensorDataset\n",
+    "from torch.optim.lr_scheduler import _LRScheduler, ReduceLROnPlateau, StepLR, LambdaLR\n",
+    "\n",
+    "import torchtext\n",
+    "\n",
+    "from torchtext.data.utils import get_tokenizer\n",
+    "from torchtext.data import Dataset, Field, BucketIterator\n",
+    "    \n",
+    "import math\n",
+    "import time\n",
+    "import random\n",
+    "import pickle\n",
+    "import linecache\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from tqdm.notebook import tqdm\n",
+    "from collections import defaultdict, Counter\n",
+    "\n",
+    "SEED = 1234\n",
+    "BATCH_SIZE = 128\n",
+    "\n",
+    "random.seed(SEED)\n",
+    "np.random.seed(SEED)\n",
+    "torch.manual_seed(SEED)\n",
+    "torch.cuda.manual_seed(SEED)\n",
+    "torch.backends.cudnn.deterministic = True\n",
+    "\n",
+    "device = torch.device(\"cuda:0\" if torch.cuda.is_available() else \"cpu\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "id": "sPiUDu8EzWFE"
+   },
+   "outputs": [],
+   "source": [
+    "with open('data/word_vocabulary.p', 'rb') as f:\n",
+    "    index_to_word, word_to_index = pickle.load(f)\n",
+    "\n",
+    "with open('data/char_vocabulary.p', 'rb')as f:\n",
+    "    index_to_char, char_to_index = pickle.load(f)\n",
+    "\n",
+    "char_array = np.load(\"data/char_array.npy\")\n",
+    "word_array = np.load(\"data/word_array.npy\")\n",
+    "\n",
+    "X_train, X_test, y_train, y_test = train_test_split(char_array, word_array, test_size=0.2, random_state=SEED)\n",
+    "\n",
+    "X_train = torch.tensor(X_train, dtype=torch.long)\n",
+    "X_test  = torch.tensor(X_test, dtype=torch.long)\n",
+    "y_train = torch.tensor(y_train, dtype=torch.long)\n",
+    "y_test  = torch.tensor(y_test, dtype=torch.long)\n",
+    "\n",
+    "train_dataset = TensorDataset(X_train, y_train)\n",
+    "test_dataset  = TensorDataset(X_test, y_test)\n",
+    "\n",
+    "train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)\n",
+    "test_dataloader  = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "id": "1lamc50oq6oX"
+   },
+   "outputs": [],
+   "source": [
+    "class CNN1d(nn.Module):\n",
+    "    def __init__(self, vocab_size, embedding_dim, n_filters, filter_sizes, output_dim, pad_idx, dropout=0.5):\n",
+    "        super(CNN1d, self).__init__()\n",
+    "        \n",
+    "        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_idx)\n",
+    "        self.convs = nn.ModuleList([\n",
+    "                                    nn.Conv1d(in_channels  = embedding_dim, \n",
+    "                                              out_channels = n_filters, \n",
+    "                                              kernel_size  = fs)\n",
+    "                                    for fs in filter_sizes\n",
+    "                                    ])\n",
+    "        \n",
+    "        self.fc = nn.Linear(len(filter_sizes) * n_filters, output_dim)\n",
+    "        self.dropout = nn.Dropout(dropout)\n",
+    "        \n",
+    "    def forward(self, text):       \n",
+    "        embedded = self.embedding(text)\n",
+    "        batch_size, word_len, char_len, emb_dim = embedded.size()\n",
+    "        \n",
+    "        # [batch * word_len, char_len, emb_dim]\n",
+    "        embedded = embedded.reshape(-1, char_len, emb_dim)  \n",
+    "        embedded = embedded.permute(0, 2, 1)\n",
+    "        \n",
+    "        conved = [F.relu(conv(embedded)) for conv in self.convs]\n",
+    "        pooled = [F.max_pool1d(conv, conv.shape[2]).squeeze(2) for conv in conved]\n",
+    "        cat    = self.dropout(torch.cat(pooled, dim=1))\n",
+    "        output = self.fc(cat)\n",
+    "\n",
+    "        # output = [batch, word_len, output_dim]\n",
+    "        output = cat.reshape(batch_size, word_len, -1)\n",
+    "        \n",
+    "        return output"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "id": "tVZ9FLtB8JZ7"
+   },
+   "outputs": [],
+   "source": [
+    "class Highway(nn.Module):\n",
+    "    def __init__(self, size, n_layers, f):\n",
+    "        super(Highway, self).__init__()\n",
+    "\n",
+    "        self.n_layers = n_layers\n",
+    "        self.nonlinear = nn.ModuleList([nn.Linear(size, size) for _ in range(n_layers)])\n",
+    "        self.linear = nn.ModuleList([nn.Linear(size, size) for _ in range(n_layers)])\n",
+    "        self.gate = nn.ModuleList([nn.Linear(size, size) for _ in range(n_layers)])\n",
+    "        self.f = f\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        for layer in range(self.n_layers):\n",
+    "            gate = F.sigmoid(self.gate[layer](x))\n",
+    "\n",
+    "            nonlinear = self.f(self.nonlinear[layer](x))\n",
+    "            linear = self.linear[layer](x)\n",
+    "\n",
+    "            x = gate * nonlinear + (1 - gate) * linear\n",
+    "\n",
+    "        return x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "id": "gbpEzdl47NaS"
+   },
+   "outputs": [],
+   "source": [
+    "class ELMO_Embedding(nn.Module):\n",
+    "    def __init__(self, vocab_size, emb_dim, hid_dim, output_dim, pad_idx, n_layers=2, bidirectional=True):\n",
+    "        super(ELMO_Embedding, self).__init__()\n",
+    "\n",
+    "        n_filters = 100\n",
+    "        filter_sizes = [3, 4, 5]\n",
+    "\n",
+    "        self.embedding = CNN1d(vocab_size, emb_dim, n_filters, filter_sizes, emb_dim, pad_idx)\n",
+    "        self.highway   = Highway(size=emb_dim, n_layers=1, f=F.relu)\n",
+    "        self.rnn       = nn.LSTM(emb_dim, hid_dim, n_layers, bidirectional=bidirectional)        \n",
+    "        self.fc_out    = nn.Linear(hid_dim, output_dim)\n",
+    "\n",
+    "    def forward(self, src):\n",
+    "        embedding               = self.embedding(src)\n",
+    "        highway                 = self.highway(embedding)\n",
+    "\n",
+    "        output, (hidden, state) = self.rnn(highway)\n",
+    "\n",
+    "        batch_size, seq_len, _  = output.size()\n",
+    "        output                  = output.reshape(batch_size, seq_len, -1, 2)\n",
+    "\n",
+    "        forward_hid, backward_hid = output[:, :, :, 0], output[:, :, :, 1]\n",
+    "        \n",
+    "        # parameter sharing?\n",
+    "        forward_pred  = self.fc_out(forward_hid)\n",
+    "        backward_pred = self.fc_out(backward_hid)\n",
+    "\n",
+    "        return forward_pred, backward_pred"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "id": "0Cx-xa3NGgzz"
+   },
+   "outputs": [],
+   "source": [
+    "from tqdm import tqdm \n",
+    "\n",
+    "def train(model, iterator, optimizer, criterion, output_dim, clip=1):\n",
+    "    model.train()\n",
+    "    epoch_loss = 0\n",
+    "    \n",
+    "    for batch in tqdm(iterator): \n",
+    "        src = batch[0]\n",
+    "        trg = batch[1]\n",
+    "\n",
+    "        optimizer.zero_grad()\n",
+    "        fpred, bpred = model(src)\n",
+    "\n",
+    "        forward_loss  = criterion(fpred.reshape(-1, output_dim), trg.reshape(-1))\n",
+    "        backward_loss = criterion(bpred.reshape(-1, output_dim), trg.reshape(-1))\n",
+    "        loss = forward_loss + backward_loss\n",
+    "        \n",
+    "        loss.backward()\n",
+    "        \n",
+    "        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)\n",
+    "        \n",
+    "        optimizer.step()\n",
+    "        \n",
+    "        epoch_loss += loss.item()\n",
+    "        \n",
+    "    return epoch_loss / len(iterator)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "id": "bxeIIvIBuYpu"
+   },
+   "outputs": [],
+   "source": [
+    "CHAR_VOCAB_SIZE = len(index_to_char)\n",
+    "WORD_VOCAB_SIZE = len(index_to_word)\n",
+    "EMB_DIM         = 300\n",
+    "HID_DIM         = 1024\n",
+    "PAD_IDX         = 0\n",
+    "\n",
+    "model     = ELMO_Embedding(CHAR_VOCAB_SIZE, EMB_DIM, HID_DIM, WORD_VOCAB_SIZE, PAD_IDX, n_layers=2, bidirectional=True)\n",
+    "model     = model.to(device)\n",
+    "criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)\n",
+    "optimizer = optim.Adam(model.parameters(), lr=0.0005)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 1000
+    },
+    "id": "3B2CRmblLiMx",
+    "outputId": "9df8d05b-96af-4ed2-d7cd-27a24200fd36"
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 2/1079 [00:44<6:37:35, 22.15s/it]"
+     ]
+    }
+   ],
+   "source": [
+    "import warnings\n",
+    "\n",
+    "warnings.filterwarnings(action='ignore')\n",
+    "\n",
+    "N_EPOCHS = 2\n",
+    "\n",
+    "best_valid_loss = float('inf')\n",
+    "optimizer.zero_grad()\n",
+    "optimizer.step()\n",
+    "\n",
+    "for epoch in range(N_EPOCHS):\n",
+    "    start_time = time.time()\n",
+    "\n",
+    "    train_loss = train(model, train_dataloader, optimizer, criterion, WORD_VOCAB_SIZE)\n",
+    "    \n",
+    "    end_time = time.time()\n",
+    "    \n",
+    "    epoch_mins, epoch_secs = epoch_time(start_time, end_time)\n",
+    "\n",
+    "    print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')\n",
+    "    print(f'\\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 133,
+   "metadata": {
+    "id": "RXyeJ59iL6vA"
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "colab": {
+   "collapsed_sections": [],
+   "name": "ELMO.ipynb",
+   "provenance": []
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}
